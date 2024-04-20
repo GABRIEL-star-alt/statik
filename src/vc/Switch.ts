@@ -33,7 +33,26 @@ function del(fileOrDir: string): void {
         // console.log(`File or directory '${fileOrDir}' does not exist.`);
     }
 }
+function removeEmptyDirectories(directory: string): void {
+    if (!fs.existsSync(directory) || !fs.lstatSync(directory).isDirectory()) {
+        return;
+    }
 
+    const files = fs.readdirSync(directory);
+    if (files.length === 0) {
+        fs.rmdirSync(directory);
+        console.log(`Removed directory: ${directory}`);
+        // Recursively remove parent directories if they become empty
+        removeEmptyDirectories(path.dirname(directory));
+    } else {
+        for (const file of files) {
+            const filePath = path.join(directory, file);
+            if (fs.lstatSync(filePath).isDirectory()) {
+                removeEmptyDirectories(filePath);
+            }
+        }
+    }
+}
 
 export async function List(cwd: string){
     try{
@@ -80,6 +99,7 @@ export async function Switch(cwd: string,CID: string){
             let prevcommitcontentaddedpaths:string[]=[]
             prevcommitcontent.forEach((e:any) => {
 del(e.path)
+removeEmptyDirectories((e.path).split('/')[0])
             });
             fs.writeFileSync(cwd+"/.statik/currcid",CID)
             const commitId = CID

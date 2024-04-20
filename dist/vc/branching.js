@@ -8,6 +8,27 @@ import { multihashToCID } from "../utils/cid.js";
 import { isOverriding } from "../utils/changes.js";
 import { commitContent } from "../utils/fetchContent.js";
 import { readAllFiles } from "../utils/dirwalk.js";
+// Function to recursively remove empty directories
+function removeEmptyDirectories(directory) {
+    if (!fs.existsSync(directory) || !fs.lstatSync(directory).isDirectory()) {
+        return;
+    }
+    const files = fs.readdirSync(directory);
+    if (files.length === 0) {
+        fs.rmdirSync(directory);
+        console.log(`Removed directory: ${directory}`);
+        // Recursively remove parent directories if they become empty
+        removeEmptyDirectories(path.dirname(directory));
+    }
+    else {
+        for (const file of files) {
+            const filePath = path.join(directory, file);
+            if (fs.lstatSync(filePath).isDirectory()) {
+                removeEmptyDirectories(filePath);
+            }
+        }
+    }
+}
 function del(fileOrDir) {
     if (fs.existsSync(fileOrDir)) {
         if (fs.lstatSync(fileOrDir).isDirectory()) {
@@ -57,6 +78,12 @@ export async function Jump(cwd, branch) {
     try {
         IsStatik(cwd);
         const currentBranch = fs.readFileSync(cwd + "/.statik/HEAD").toString();
+        const currentHead = fs.readFileSync(cwd + "/.statik/heads/" + currentBranch).toString();
+        let dump = fs.readFileSync(cwd + "/.statik/currcid").toString();
+        if (dump != currentHead) {
+            console.log("jump to head before switching branches");
+            return;
+        }
         if (fs.readFileSync(cwd + "/.statik/SNAPSHOT").toString().length) {
             console.log("There are staged changes. You cannot switch branch without commiting it");
             return;
@@ -65,7 +92,6 @@ export async function Jump(cwd, branch) {
             console.log("Already on branch " + branch);
             return;
         }
-        const currentHead = fs.readFileSync(cwd + "/.statik/heads/" + currentBranch).toString();
         // Check for staged changes
         if (!fs.existsSync(cwd + "/.statik/heads/" + branch)) {
             console.log("Branching out to " + branch + "...");
@@ -133,6 +159,7 @@ export async function Jump(cwd, branch) {
             });
             oldBranchContent.forEach((e) => {
                 del(e.path);
+                removeEmptyDirectories((e.path).split('/')[0]);
             });
             // deleteFoldersAndFilesExceptStatikAndPaths(cwd,newBranchaddedpaths)
             let data;

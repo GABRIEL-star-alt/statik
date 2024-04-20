@@ -41,7 +41,6 @@ function removeEmptyDirectories(directory: string): void {
     const files = fs.readdirSync(directory);
     if (files.length === 0) {
         fs.rmdirSync(directory);
-        console.log(`Removed directory: ${directory}`);
         // Recursively remove parent directories if they become empty
         removeEmptyDirectories(path.dirname(directory));
     } else {

@@ -30,7 +30,7 @@ function deleteFoldersAndFilesExceptStatikAndPaths(cwd, pathsToKeep) {
     const filesAndFolders = fs.readdirSync(cwd);
     for (const fileOrFolder of filesAndFolders) {
         const filePath = path.join(cwd, fileOrFolder);
-        if (fileOrFolder === '.statik' || pathsToKeep.includes(filePath)) {
+        if (fileOrFolder === '.statik' || !pathsToKeep.includes(filePath)) {
             continue;
         }
         const stats = fs.statSync(filePath);
@@ -65,16 +65,16 @@ export async function Jump(cwd, branch) {
     try {
         IsStatik(cwd);
         const currentBranch = fs.readFileSync(cwd + "/.statik/HEAD").toString();
+        if (fs.readFileSync(cwd + "/.statik/SNAPSHOT").toString().length) {
+            console.log("There are staged changes. You cannot switch branch without commiting it");
+            return;
+        }
         if (branch === currentBranch) {
             console.log("Already on branch " + branch);
             return;
         }
         const currentHead = fs.readFileSync(cwd + "/.statik/heads/" + currentBranch).toString();
         // Check for staged changes
-        if (fs.readFileSync(cwd + "/.statik/SNAPSHOT").toString().length) {
-            console.log("There are staged changes. You cannot switch branch without commiting it");
-            return;
-        }
         if (!fs.existsSync(cwd + "/.statik/heads/" + branch)) {
             console.log("Branching out to " + branch + "...");
             fs.writeFileSync(cwd + "/.statik/heads/" + branch, currentHead);

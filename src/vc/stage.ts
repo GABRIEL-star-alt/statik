@@ -2,6 +2,7 @@ import { create, globSource } from "ipfs-http-client";
 import { IsStatik } from "../utils/checkStatik.js";
 import fs from 'fs'
 import { FetchConfig } from "../utils/fetchConfig.js";
+import { CID } from "ipfs-http-client";
 import path  from "path";
 import Path from 'path'
 import { Duplex } from "stream";
@@ -62,7 +63,6 @@ function getAllFilePathsInCWD(directoryPath: string, basePath: string = ''): str
 export async function Add(cwd:string,paths:string[]){
     try{
         IsStatik(cwd)
-        console.log(getAllFilePathsInCWD(cwd))
         if(!paths.length){
             console.log("No file path specified!")
             console.log("Hint: statik help")
@@ -83,7 +83,7 @@ export async function Add(cwd:string,paths:string[]){
                         result.path = concatenateFilePaths(path,result.path)
 
                             if(fs.statSync(cwd+"/"+result.path).isDirectory()) continue;
-                        
+
                         snapshot.push(result)
                     }
                 
@@ -97,16 +97,15 @@ export async function Add(cwd:string,paths:string[]){
     
                         for await (const result of client.addAll(globSource(path,{recursive:true}))) {
                             result.path = concatenateFilePaths(path,result.path)
-                            console.log(result) 
 
                             if(fs.statSync(cwd+"/"+result.path).isDirectory()) continue;
+                        
                             snapshot.push(result)
                             
                         }
                     
                 }
             }
-            console.log(snapshot)
             const result = await client.add(JSON.stringify(snapshot))
             fs.writeFileSync(cwd+"/.statik/SNAPSHOT",result.path)
             console.log(

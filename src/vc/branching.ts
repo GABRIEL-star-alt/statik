@@ -33,7 +33,7 @@ function deleteFoldersAndFilesExceptStatikAndPaths(cwd: string, pathsToKeep: str
     for (const fileOrFolder of filesAndFolders) {
         const filePath = path.join(cwd, fileOrFolder);
 
-        if (fileOrFolder === '.statik' || pathsToKeep.includes(filePath)) {
+        if (fileOrFolder === '.statik' || !pathsToKeep.includes(filePath)) {
             continue;
         }
 

@@ -8,6 +8,7 @@ import { Log } from "./vc/history.js";
 import { Jump, List } from "./vc/branching.js";
 import { Switch } from "./vc/Switch.js";
 import { hardreset, softreset } from "./vc/reset.js";
+import { publish } from "./vc/publish.js";
 const program = new Command();
 program
     .name("statik")
@@ -22,6 +23,7 @@ program.command("jump <branch>").description("Switch between branches");
 program.command("switch <CID>").description("Switch between commits,switch <head> to jump to head commit'");
 program.command("hardreset <CID>").description("  hard reset ");
 program.command("softreset <CID>").description("  soft reset ");
+program.command("publish <file_path>").description("statik  pages");
 program.parse(process.argv);
 if (program.args.length < 1) {
     program.outputHelp();
@@ -56,6 +58,9 @@ switch (program.args[0]) {
         break;
     case "softreset":
         softreset(program.args[1]);
+        break;
+    case "publish":
+        publish(cwd, program.args[1]);
         break;
     default:
         program.outputHelp();

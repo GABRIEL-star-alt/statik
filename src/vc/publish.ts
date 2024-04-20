@@ -6,7 +6,9 @@ import path, { resolve }  from "path";
 import Path from 'path'
 import { Duplex } from "stream";
 import { multihashToCID } from "../utils/cid.js";
-
+import { MIMEType } from "util";
+import pkg from "figlet";
+const {text}=pkg
 function removeFirstTwoCharacters(str: string): string {
     return str.substring(2);
 }
@@ -46,6 +48,7 @@ const options = {
     ttl: '10s',
     key: 'self',
     allowOffline: true
+    // MIMEType:[text,CSS]
   }
 
     const client = create({url: FetchConfig(cwd).ipfs_node_url})
@@ -56,6 +59,7 @@ const options = {
         for await (const result of client.addAll(globSource(path,{recursive:true}))) {
             result.path = concatenateFilePaths(path,result.path)
 if(result.path==f){
+    console.log(result.cid)
     client.name.publish(result.cid,options).then(value => {
         console.log(`https://ipfs.io/ipns/${value.name}`);
     })

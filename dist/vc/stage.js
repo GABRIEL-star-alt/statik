@@ -2,6 +2,53 @@ import { create, globSource } from "ipfs-http-client";
 import { IsStatik } from "../utils/checkStatik.js";
 import fs from 'fs';
 import { FetchConfig } from "../utils/fetchConfig.js";
+import path from "path";
+function removeFirstTwoCharacters(str) {
+    return str.substring(2);
+}
+function concatenateFilePaths(a, b) {
+    const aParts = a.split('/');
+    const bParts = b.split('/');
+    if (a[a.length - 1] == "/") {
+        bParts.forEach((e, i) => {
+            if (i != 0) {
+                a = a + e + '/';
+            }
+        });
+        return a.slice(0, -1);
+    }
+    else {
+        a = a + '/';
+        bParts.forEach((e, i) => {
+            if (i != 0) {
+                a = a + e + '/';
+            }
+        });
+        console.log(a);
+        return a.slice(0, -1);
+    }
+}
+function getAllFilePathsInCWD(directoryPath, basePath = '') {
+    const files = [];
+    // Read all files and directories in the given directory
+    const items = fs.readdirSync(directoryPath);
+    items.forEach(item => {
+        const itemPath = path.join(directoryPath, item);
+        const stat = fs.statSync(itemPath);
+        if (stat.isDirectory()) {
+            // If it's a directory, and it's not the ".statik" directory, recursively call the function
+            if (item !== '.statik') {
+                const subFiles = getAllFilePathsInCWD(itemPath, path.join(basePath, item));
+                files.push(...subFiles);
+            }
+        }
+        else {
+            // If it's a file, add its relative path to the list
+            files.push(path.join(basePath, item));
+        }
+    });
+    return files.map(input => input.replace(/\\/g, "/"));
+}
 export async function Add(cwd, paths) {
     try {
         IsStatik(cwd);
@@ -15,14 +62,26 @@ export async function Add(cwd, paths) {
         const prevCommit = fs.readFileSync(cwd + "/.statik/heads/" + branch).toString();
         if (!prevCommit.length) {
             let snapshot = [];
-            for (const path of paths) {
-                for await (const result of client.addAll(globSource(path, { recursive: true }))) {
-                    if (fs.statSync(cwd + "/" + result.path).isDirectory())
-                        continue;
-                    snapshot.push(result);
+            if (paths.length == 1 && paths[0] == ".") {
+                for (const path of getAllFilePathsInCWD(cwd)) {
+                    for await (const result of client.addAll(globSource(path, { recursive: true }))) {
+                        result.path = concatenateFilePaths(path, result.path);
+                        if (fs.statSync(cwd + "/" + result.path).isDirectory())
+                            continue;
+                        snapshot.push(result);
+                    }
                 }
             }
-            console.log(snapshot);
+            else {
+                for (const path of paths) {
+                    for await (const result of client.addAll(globSource(path, { recursive: true }))) {
+                        result.path = concatenateFilePaths(path, result.path);
+                        if (fs.statSync(cwd + "/" + result.path).isDirectory())
+                            continue;
+                        snapshot.push(result);
+                    }
+                }
+            }
             const result = await client.add(JSON.stringify(snapshot));
             fs.writeFileSync(cwd + "/.statik/SNAPSHOT", result.path);
             console.log("Files staged to IPFS with cid: " + result.path);

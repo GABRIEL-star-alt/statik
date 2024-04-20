@@ -71,16 +71,16 @@ export async function Jump(cwd: string,branch: string){
     try{
         IsStatik(cwd)
         const currentBranch = fs.readFileSync(cwd+"/.statik/HEAD").toString()
+        if(fs.readFileSync(cwd+"/.statik/SNAPSHOT").toString().length){
+            console.log("There are staged changes. You cannot switch branch without commiting it")
+            return
+        }
         if(branch===currentBranch){
             console.log("Already on branch "+branch)
             return
         }
         const currentHead = fs.readFileSync(cwd+"/.statik/heads/"+currentBranch).toString()
         // Check for staged changes
-        if(fs.readFileSync(cwd+"/.statik/SNAPSHOT").toString().length){
-            console.log("There are staged changes. You cannot switch branch without commiting it")
-            return
-        }
 
         if(!fs.existsSync(cwd+"/.statik/heads/"+branch)){
             console.log("Branching out to "+branch+"...")

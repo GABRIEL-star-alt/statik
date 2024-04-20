@@ -101,16 +101,27 @@ export async function Add(cwd, paths) {
             }
             // Not optimized
             let newContent = [];
-            for (const path of paths) {
-                for await (const result of client.addAll(globSource(path, { recursive: true }))) {
-                    // Check if the path is a directory
-                    const path = result.path;
-                    if (fs.statSync(cwd + "/" + path).isDirectory()) {
-                        continue;
+            if (paths.length == 1 && paths[0] == ".") {
+                for (const path of getAllFilePathsInCWD(cwd)) {
+                    for await (const result of client.addAll(globSource(path, { recursive: true }))) {
+                        result.path = concatenateFilePaths(path, result.path);
+                        if (fs.statSync(cwd + "/" + result.path).isDirectory())
+                            continue;
+                        newContent.push(result);
                     }
-                    newContent.push(result);
                 }
             }
+            else {
+                for (const path of paths) {
+                    for await (const result of client.addAll(globSource(path, { recursive: true }))) {
+                        result.path = concatenateFilePaths(path, result.path);
+                        if (fs.statSync(cwd + "/" + result.path).isDirectory())
+                            continue;
+                        newContent.push(result);
+                    }
+                }
+            }
+            console.log(newContent);
             let newContentaddedpaths = [];
             newContent.forEach((e) => {
                 newContentaddedpaths.push(e.path);

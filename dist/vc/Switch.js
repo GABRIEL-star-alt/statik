@@ -6,42 +6,33 @@ import path from "path";
 import Path from 'path';
 import { multihashToCID } from "../utils/cid.js";
 import { commitContent } from "../utils/fetchContent.js";
-function deleteFolderRecursive(folderPath) {
-    if (fs.existsSync(folderPath)) {
-        fs.readdirSync(folderPath).forEach((file) => {
-            const curPath = path.join(folderPath, file);
-            if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                deleteFolderRecursive(curPath);
-            }
-            else { // delete file
-                fs.unlinkSync(curPath);
-            }
-        });
-        fs.rmdirSync(folderPath);
-    }
-}
-function deleteFoldersAndFilesExceptStatikAndPaths(cwd, pathsToKeep) {
-    const statikPath = path.join(cwd, '.statik');
-    if (!fs.existsSync(statikPath)) {
-        return;
-    }
-    const filesAndFolders = fs.readdirSync(cwd);
-    for (const fileOrFolder of filesAndFolders) {
-        const filePath = path.join(cwd, fileOrFolder);
-        if (fileOrFolder === '.statik' || pathsToKeep.includes(filePath)) {
-            continue;
-        }
-        const stats = fs.statSync(filePath);
-        if (stats.isDirectory()) {
-            deleteFolderRecursive(filePath);
+function del(fileOrDir) {
+    if (fs.existsSync(fileOrDir)) {
+        if (fs.lstatSync(fileOrDir).isDirectory()) {
+            fs.readdirSync(fileOrDir).forEach((file) => {
+                const curPath = path.join(fileOrDir, file);
+                if (fs.lstatSync(curPath).isDirectory()) {
+                    // Recursively delete directories
+                    del(curPath);
+                }
+                else {
+                    // Delete files
+                    fs.unlinkSync(curPath);
+                }
+            });
+            // After deleting all files, delete the directory itself
+            fs.rmdirSync(fileOrDir);
         }
         else {
-            fs.unlinkSync(filePath);
+            // If it's a file, simply delete it
+            fs.unlinkSync(fileOrDir);
         }
+    }
+    else {
+        // console.log(`File or directory '${fileOrDir}' does not exist.`);
     }
 }
 export async function List(cwd) {
-    console.log("done");
     try {
         IsStatik(cwd);
         // List all files
@@ -71,8 +62,21 @@ export async function Switch(cwd, CID) {
             return;
         }
         else {
-            const commitId = CID;
             const client = create({ url: FetchConfig(cwd).ipfs_node_url });
+            const prevcid = fs.readFileSync(cwd + "/.statik/currcid").toString();
+            let prevcommitcontent = [];
+            if (prevcid.length) {
+                prevcommitcontent = await commitContent(prevcid, client);
+            }
+            else {
+                prevcommitcontent = await commitContent(currentHead, client);
+            }
+            let prevcommitcontentaddedpaths = [];
+            prevcommitcontent.forEach((e) => {
+                del(e.path);
+            });
+            fs.writeFileSync(cwd + "/.statik/currcid", CID);
+            const commitId = CID;
             // Check for unstaged changes
             const headContent = await commitContent(currentHead, client);
             console.log(commitId);
@@ -81,11 +85,11 @@ export async function Switch(cwd, CID) {
             // Check for overriding changes
             let newcommitContent;
             if (CID == "head") {
+                fs.writeFileSync(cwd + "/.statik/currcid", currentHead);
                 newcommitContent = headContent;
             }
             else {
                 newcommitContent = await commitContent(commitId, client);
-                console.log("djcin");
             }
             // Conditionally delete files. Exempt new files under basepath
             let basepathnew;
@@ -105,7 +109,7 @@ export async function Switch(cwd, CID) {
             newcommitContent.forEach((e) => {
                 newBranchaddedpaths.push(e.path);
             });
-            deleteFoldersAndFilesExceptStatikAndPaths(cwd, newBranchaddedpaths);
+            //    deleteFoldersAndFilesExceptStatikAndPaths(cwd,newBranchaddedpaths)
             let data;
             let flag = false;
             for (const obj of newcommitContent) {

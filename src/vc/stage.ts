@@ -126,17 +126,40 @@ export async function Add(cwd:string,paths:string[]){
             }
             // Not optimized
             let newContent:any[]=[]
-            for (const path of paths){
-                for await (const result of client.addAll(globSource(path,{recursive:true}))) {
-                    // Check if the path is a directory
-                    const path = result.path
-                    if(fs.statSync(cwd+"/"+path).isDirectory()) {
-                        continue;}
-                    newContent.push(result)    
+            if (paths.length==1 && paths[0]=="."){
+                for (const path of getAllFilePathsInCWD(cwd)){
 
+               
+                
+
+                    for await (const result of client.addAll(globSource(path,{recursive:true}))) {
+                        result.path = concatenateFilePaths(path,result.path)
+
+                            if(fs.statSync(cwd+"/"+result.path).isDirectory()) continue;
+
+                        newContent.push(result)
+                    }
+                
+            }   
+            }
+            else{
+                for (const path of paths){
+    
                    
+                    
+    
+                        for await (const result of client.addAll(globSource(path,{recursive:true}))) {
+                            result.path = concatenateFilePaths(path,result.path)
+
+                            if(fs.statSync(cwd+"/"+result.path).isDirectory()) continue;
+                        
+                            newContent.push(result)
+                            
+                        }
+                    
                 }
             }
+            console.log(newContent)
 let newContentaddedpaths:string[]=[];
 
 newContent.forEach((e:any)=>{

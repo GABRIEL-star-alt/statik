@@ -8,38 +8,30 @@ import { multihashToCID } from "../utils/cid.js";
 import { isOverriding } from "../utils/changes.js";
 import { commitContent } from "../utils/fetchContent.js";
 import { readAllFiles } from "../utils/dirwalk.js";
-function deleteFolderRecursive(folderPath) {
-    if (fs.existsSync(folderPath)) {
-        fs.readdirSync(folderPath).forEach((file) => {
-            const curPath = path.join(folderPath, file);
-            if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                deleteFolderRecursive(curPath);
-            }
-            else { // delete file
-                fs.unlinkSync(curPath);
-            }
-        });
-        fs.rmdirSync(folderPath);
-    }
-}
-function deleteFoldersAndFilesExceptStatikAndPaths(cwd, pathsToKeep) {
-    const statikPath = path.join(cwd, '.statik');
-    if (!fs.existsSync(statikPath)) {
-        return;
-    }
-    const filesAndFolders = fs.readdirSync(cwd);
-    for (const fileOrFolder of filesAndFolders) {
-        const filePath = path.join(cwd, fileOrFolder);
-        if (fileOrFolder === '.statik' || !pathsToKeep.includes(filePath)) {
-            continue;
-        }
-        const stats = fs.statSync(filePath);
-        if (stats.isDirectory()) {
-            deleteFolderRecursive(filePath);
+function del(fileOrDir) {
+    if (fs.existsSync(fileOrDir)) {
+        if (fs.lstatSync(fileOrDir).isDirectory()) {
+            fs.readdirSync(fileOrDir).forEach((file) => {
+                const curPath = path.join(fileOrDir, file);
+                if (fs.lstatSync(curPath).isDirectory()) {
+                    // Recursively delete directories
+                    del(curPath);
+                }
+                else {
+                    // Delete files
+                    fs.unlinkSync(curPath);
+                }
+            });
+            // After deleting all files, delete the directory itself
+            fs.rmdirSync(fileOrDir);
         }
         else {
-            fs.unlinkSync(filePath);
+            // If it's a file, simply delete it
+            fs.unlinkSync(fileOrDir);
         }
+    }
+    else {
+        // console.log(`File or directory '${fileOrDir}' does not exist.`);
     }
 }
 export async function List(cwd) {
@@ -115,25 +107,34 @@ export async function Jump(cwd, branch) {
                 }
             }
             // Conditionally delete files. Exempt new files under basepath
-            const basepath = Path.dirname(newBranchContent[index].path);
+            // const basepath = Path.dirname(newBranchContent[index].path)
             let basepathnew;
             let dir;
-            basepathnew = newBranchContent[0].path.split("/");
-            let isfile;
-            if (newBranchContent[0].path.split("/").length == 1) {
-                dir = basepathnew[0];
-                isfile = "1";
-            }
-            else {
-                dir = basepathnew[0] + "/";
-                isfile = "0";
+            if (newBranchContent.length) {
+                basepathnew = newBranchContent[0].path.split("/");
+                let isfile;
+                if (newBranchContent[0].path.split("/").length == 1) {
+                    dir = basepathnew[0];
+                    isfile = "1";
+                }
+                else {
+                    dir = basepathnew[0] + "/";
+                    isfile = "0";
+                }
             }
             const directoryPath = cwd + "/" + dir;
             let newBranchaddedpaths = [];
             newBranchContent.forEach((e) => {
                 newBranchaddedpaths.push(e.path);
             });
-            deleteFoldersAndFilesExceptStatikAndPaths(cwd, newBranchaddedpaths);
+            let oldBranchContentaddedpath = [];
+            oldBranchContent.forEach((e) => {
+                oldBranchContentaddedpath.push(e.path);
+            });
+            oldBranchContent.forEach((e) => {
+                del(e.path);
+            });
+            // deleteFoldersAndFilesExceptStatikAndPaths(cwd,newBranchaddedpaths)
             let data;
             let flag = false;
             for (const obj of newBranchContent) {

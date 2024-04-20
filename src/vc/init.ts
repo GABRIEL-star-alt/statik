@@ -9,6 +9,7 @@ export async function Init(cwd: string,ipfs_node_url:string){
         fs.mkdirSync(cwd+"/.statik/heads",{recursive: true})
     
         fs.writeFileSync(cwd+"/.statik/heads/main", "")
+        fs.writeFileSync(cwd+"/.statik/currcid", "")
         fs.writeFileSync(cwd+"/.statik/HEAD", "main")
         fs.writeFileSync(cwd+"/.statik/SNAPSHOT", "")
         fs.writeFileSync(cwd+"/.statik/CONFIG", JSON.stringify({

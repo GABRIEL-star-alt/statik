@@ -82,7 +82,7 @@ export async function Switch(cwd, CID) {
         }
         else {
             const client = create({ url: FetchConfig(cwd).ipfs_node_url });
-            const prevcid = fs.readFileSync(cwd + "/.statik/currcid").toString();
+            const prevcid = currentHead;
             let prevcommitcontent = [];
             if (prevcid.length) {
                 prevcommitcontent = await commitContent(prevcid, client);
@@ -95,7 +95,6 @@ export async function Switch(cwd, CID) {
                 del(e.path);
                 removeEmptyDirectories((e.path).split('/')[0]);
             });
-            fs.writeFileSync(cwd + "/.statik/currcid", CID);
             const commitId = CID;
             // Check for unstaged changes
             const headContent = await commitContent(currentHead, client);
@@ -105,7 +104,6 @@ export async function Switch(cwd, CID) {
             // Check for overriding changes
             let newcommitContent;
             if (CID == "head") {
-                fs.writeFileSync(cwd + "/.statik/currcid", currentHead);
                 newcommitContent = headContent;
             }
             else {
@@ -141,7 +139,6 @@ export async function Switch(cwd, CID) {
                 fs.mkdirSync(dirname, { recursive: true });
                 for await (const itr of asyncitr) {
                     data = Buffer.from(itr).toString();
-                    console.log(data);
                     if (data) {
                         fs.writeFileSync(path1, data);
                     }

@@ -9,6 +9,7 @@ import { Jump, List } from "./vc/branching.js";
 import { Switch } from "./vc/Switch.js";
 import { hardreset, softreset } from "./vc/reset.js";
 import { publish } from "./vc/publish.js";
+import { restore } from "./vc/restore.js";
 const program = new Command();
 program
   .name("statik")
@@ -21,16 +22,15 @@ program.command("log").description("View the commit history of the current branc
 program.command("branch").description("List all branches in the Statik repository")
 program.command("jump <branch>").description("Switch between branches")
 program.command("switch <CID>").description("Switch between commits,switch <head> to jump to head commit'")
-program.command("hardreset <CID>").description("  hard reset ")
-program.command("softreset <CID>").description("  soft reset ")
-program.command("publish <file_path>").description("statik  pages")
+program.command("hardreset <CID>").description("hard reset ")
+program.command("reset <CID>").description("soft  reset ")
+
 program.parse(process.argv);
 
 if (program.args.length < 1) {
   program.outputHelp()
   process.exit(0)
 }
-
 
 const cwd = process.cwd();
 switch (program.args[0]) {
@@ -56,15 +56,18 @@ switch (program.args[0]) {
   case "switch":
     Switch(cwd, program.args[1]);
     break;
+  case "publish":
+    publish(cwd,program.args[1]); 
+    break;   
+  case "restore":
+    restore(cwd);
+    break;
   case "hardreset":
     hardreset(program.args[1]);
     break;
   case "softreset":
     softreset(program.args[1]);
     break;  
-  case "publish":
-    publish(cwd,program.args[1]); 
-    break;   
   
   default:
     program.outputHelp();

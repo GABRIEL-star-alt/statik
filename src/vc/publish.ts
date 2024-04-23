@@ -46,7 +46,7 @@ const options = {
     resolve: true,
     lifetime: '10s',
     ttl: '10s',
-    key: 'self',
+    key: 'hi',
     allowOffline: true
     // MIMEType:[text,CSS]
   }

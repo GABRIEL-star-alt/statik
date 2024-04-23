@@ -24,7 +24,6 @@ function concatenateFilePaths(a, b) {
                 a = a + e + '/';
             }
         });
-        console.log(a);
         return a.slice(0, -1);
     }
 }
@@ -121,7 +120,6 @@ export async function Add(cwd, paths) {
                     }
                 }
             }
-            console.log(newContent);
             let newContentaddedpaths = [];
             newContent.forEach((e) => {
                 newContentaddedpaths.push(e.path);

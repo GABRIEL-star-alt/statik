@@ -7,8 +7,9 @@ export async function hardreset(CID) {
     let cwd = process.cwd();
     IsStatik(cwd);
     const currentBranch = fs.readFileSync(cwd + "/.statik/HEAD").toString();
-    fs.writeFileSync(cwd + "/.statik/heads/" + currentBranch, CID);
     Switch(cwd, CID);
+    fs.writeFileSync(cwd + "/.statik/heads/" + currentBranch, CID);
+    console.log(`head now at ${CID}`);
 }
 export async function softreset(CID) {
     let cwd = process.cwd();
@@ -23,5 +24,6 @@ export async function softreset(CID) {
     }
     fs.writeFileSync(cwd + "/.statik/heads/" + currentBranch, CID);
     fs.writeFileSync(cwd + "/.statik/SNAPSHOT", prevSnapshot);
+    console.log(`head now at ${CID}`);
 }
 //# sourceMappingURL=reset.js.map

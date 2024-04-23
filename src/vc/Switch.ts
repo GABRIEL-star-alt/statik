@@ -86,7 +86,7 @@ export async function Switch(cwd: string,CID: string){
         
         else{
             const client = create({url: FetchConfig(cwd).ipfs_node_url})
-            const prevcid=fs.readFileSync(cwd+"/.statik/currcid").toString()
+            const prevcid=currentHead
             let prevcommitcontent:any[]=[]
             if(prevcid.length){
                  prevcommitcontent=await commitContent(prevcid,client)
@@ -100,7 +100,6 @@ export async function Switch(cwd: string,CID: string){
 del(e.path)
 removeEmptyDirectories((e.path).split('/')[0])
             });
-            fs.writeFileSync(cwd+"/.statik/currcid",CID)
             const commitId = CID
             
             // Check for unstaged changes
@@ -112,13 +111,13 @@ removeEmptyDirectories((e.path).split('/')[0])
             // Check for overriding changes
             let newcommitContent
             if(CID=="head"){
-                fs.writeFileSync(cwd+"/.statik/currcid",currentHead)
 
                 newcommitContent=headContent
             }
             else{
     newcommitContent = await commitContent(commitId,client)
 }
+
             
             // Conditionally delete files. Exempt new files under basepath
             let basepathnew
@@ -154,7 +153,6 @@ newcommitContent.forEach((e:any)=>{
                 fs.mkdirSync(dirname, { recursive: true });
                 for await (const itr of asyncitr) {
                     data = Buffer.from(itr).toString();
-                    console.log(data)
                     if(data){
                         fs.writeFileSync(path1, data);
                     }

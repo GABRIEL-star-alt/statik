@@ -31,7 +31,6 @@ return a.slice(0,-1);
             a = a+e+'/';
         }
      })
-     console.log(a)
      return a.slice(0,-1);
 
     }
@@ -80,6 +79,7 @@ export async function Add(cwd:string,paths:string[]){
                 
 
                     for await (const result of client.addAll(globSource(path,{recursive:true}))) {
+
                         result.path = concatenateFilePaths(path,result.path)
 
                             if(fs.statSync(cwd+"/"+result.path).isDirectory()) continue;
@@ -133,6 +133,7 @@ export async function Add(cwd:string,paths:string[]){
                 
 
                     for await (const result of client.addAll(globSource(path,{recursive:true}))) {
+
                         result.path = concatenateFilePaths(path,result.path)
 
                             if(fs.statSync(cwd+"/"+result.path).isDirectory()) continue;
@@ -159,7 +160,6 @@ export async function Add(cwd:string,paths:string[]){
                     
                 }
             }
-            console.log(newContent)
 let newContentaddedpaths:string[]=[];
 
 newContent.forEach((e:any)=>{
@@ -179,7 +179,6 @@ flag=true
     }
    
 })
-
           
             const result = await client.add(JSON.stringify(newContent))
             if(result.path==prevSnapshot){

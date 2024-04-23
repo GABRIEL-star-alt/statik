@@ -10,17 +10,16 @@ import { commitContent } from "../utils/fetchContent.js";
 import { deleteAllFiles, readAllFiles } from "../utils/dirwalk.js";
 import { Switch } from "./Switch.js";
 
-
 export async function hardreset(CID:string) {
     
         let cwd=process.cwd();
     IsStatik(cwd)
     const currentBranch = fs.readFileSync(cwd+"/.statik/HEAD").toString()
+    Switch(cwd,CID)
     fs.writeFileSync(cwd+"/.statik/heads/"+currentBranch,CID)
 
-    Switch(cwd,CID)
         
-        
+    console.log(`head now at ${CID}`)    
     }
 
     export async function softreset(CID:string)
@@ -42,5 +41,7 @@ export async function hardreset(CID:string) {
 
                 fs.writeFileSync(cwd+"/.statik/SNAPSHOT",prevSnapshot)
     
+                console.log(`head now at ${CID}`)    
+
         }
         

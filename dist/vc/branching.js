@@ -8,6 +8,27 @@ import { multihashToCID } from "../utils/cid.js";
 import { isOverriding } from "../utils/changes.js";
 import { commitContent } from "../utils/fetchContent.js";
 import { readAllFiles } from "../utils/dirwalk.js";
+function getAllFilePathsInCWD(directoryPath, basePath = '') {
+    const files = [];
+    // Read all files and directories in the given directory
+    const items = fs.readdirSync(directoryPath);
+    items.forEach(item => {
+        const itemPath = path.join(directoryPath, item);
+        const stat = fs.statSync(itemPath);
+        if (stat.isDirectory()) {
+            // If it's a directory, and it's not the ".statik" directory, recursively call the function
+            if (item !== '.statik') {
+                const subFiles = getAllFilePathsInCWD(itemPath, path.join(basePath, item));
+                files.push(...subFiles);
+            }
+        }
+        else {
+            // If it's a file, add its relative path to the list
+            files.push(path.join(basePath, item));
+        }
+    });
+    return files.map(input => input.replace(/\\/g, "/"));
+}
 // Function to recursively remove empty directories
 function removeEmptyDirectories(directory) {
     if (!fs.existsSync(directory) || !fs.lstatSync(directory).isDirectory()) {
@@ -78,9 +99,8 @@ export async function Jump(cwd, branch) {
         IsStatik(cwd);
         const currentBranch = fs.readFileSync(cwd + "/.statik/HEAD").toString();
         const currentHead = fs.readFileSync(cwd + "/.statik/heads/" + currentBranch).toString();
-        let dump = fs.readFileSync(cwd + "/.statik/currcid").toString();
-        if (dump != currentHead) {
-            console.log("jump to head before switching branches");
+        if (!currentHead.length) {
+            console.log("can't jump to branches without base commit");
             return;
         }
         if (fs.readFileSync(cwd + "/.statik/SNAPSHOT").toString().length) {
@@ -156,6 +176,27 @@ export async function Jump(cwd, branch) {
             oldBranchContent.forEach((e) => {
                 oldBranchContentaddedpath.push(e.path);
             });
+            var allpathsprev = [];
+            allpathsprev = getAllFilePathsInCWD(cwd);
+            var oldbranchunstages = [];
+            allpathsprev.forEach((e) => {
+                if (!oldBranchContentaddedpath.includes(e)) {
+                    oldbranchunstages.push(e);
+                }
+            });
+            var flag1 = false;
+            var conflictfiles = [];
+            oldbranchunstages.forEach((e) => {
+                if (newBranchaddedpaths.includes(e)) {
+                    conflictfiles.push(e);
+                }
+            });
+            if (conflictfiles.length > 0) {
+                conflictfiles.forEach((e) => {
+                    console.log(`the file path ${e} is unstaged in the ${currentBranch} but staged in the branch ${branch} stage the ${e} file to avoid conflicts`);
+                });
+                return;
+            }
             oldBranchContent.forEach((e) => {
                 del(e.path);
                 removeEmptyDirectories((e.path).split('/')[0]);

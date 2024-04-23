@@ -9,7 +9,30 @@ import { isOverriding } from "../utils/changes.js";
 import { commitContent } from "../utils/fetchContent.js";
 import { deleteAllFiles, readAllFiles } from "../utils/dirwalk.js";
 
+function getAllFilePathsInCWD(directoryPath: string, basePath: string = ''): string[] {
+    const files: string[] = [];
 
+    // Read all files and directories in the given directory
+    const items = fs.readdirSync(directoryPath);
+
+    items.forEach(item => {
+        const itemPath = path.join(directoryPath, item);
+        const stat = fs.statSync(itemPath);
+
+        if (stat.isDirectory()) {
+            // If it's a directory, and it's not the ".statik" directory, recursively call the function
+            if (item !== '.statik') {
+                const subFiles = getAllFilePathsInCWD(itemPath, path.join(basePath, item));
+                files.push(...subFiles);
+            }
+        } else {
+            // If it's a file, add its relative path to the list
+            files.push(path.join(basePath, item));
+        }
+    });
+
+    return files.map(input => input.replace(/\\/g, "/"));
+}
 // Function to recursively remove empty directories
 function removeEmptyDirectories(directory: string): void {
     if (!fs.existsSync(directory) || !fs.lstatSync(directory).isDirectory()) {
@@ -81,12 +104,11 @@ export async function Jump(cwd: string,branch: string){
         IsStatik(cwd)
         const currentBranch = fs.readFileSync(cwd+"/.statik/HEAD").toString()
         const currentHead = fs.readFileSync(cwd+"/.statik/heads/"+currentBranch).toString()
-        let dump=fs.readFileSync(cwd+"/.statik/currcid").toString()
-        if(dump!=currentHead){
-
-            console.log("jump to head before switching branches")
-            return
+        if(!currentHead.length){
+            console.log("can't jump to branches without base commit")
+            return;
         }
+        
 
         
         if(fs.readFileSync(cwd+"/.statik/SNAPSHOT").toString().length){
@@ -117,6 +139,7 @@ export async function Jump(cwd: string,branch: string){
             // Solution: Prevent only if added files and deleted files are overriding
             // Check for overriding changes
             const newBranchContent = await commitContent(commitId,client)
+
             const {newFiles,updated} = await isOverriding(cwd,client,newBranchContent,addedFiles)
             if(updated.length>0){
                 console.log("Overriding changes:")
@@ -170,6 +193,31 @@ let oldBranchContentaddedpath:string[]=[]
 oldBranchContent.forEach((e:any)=> {
     oldBranchContentaddedpath.push(e.path)
 });
+
+
+var allpathsprev:string[]=[];
+allpathsprev=getAllFilePathsInCWD(cwd)
+var oldbranchunstages:string[]=[]
+allpathsprev.forEach((e:any)=>{
+    if(!oldBranchContentaddedpath.includes(e)){
+oldbranchunstages.push(e);
+    }
+})
+var flag1=false;
+var conflictfiles:string[]=[];
+oldbranchunstages.forEach((e:any)=>{
+    if(newBranchaddedpaths.includes(e)){
+conflictfiles.push(e);
+    }
+    
+})
+if(conflictfiles.length>0){
+    conflictfiles.forEach((e:any)=>{
+        console.log(`the file path ${e} is unstaged in the ${currentBranch} but staged in the branch ${branch} stage the ${e} file to avoid conflicts`)
+    })
+    return;
+}
+
 oldBranchContent.forEach((e:any)=>{
 del(e.path)
 removeEmptyDirectories((e.path).split('/')[0])

@@ -21,9 +21,10 @@ program.command("commit <message>").description("Commit changes to the Statik re
 program.command("log").description("View the commit history of the current branch")
 program.command("branch").description("List all branches in the Statik repository")
 program.command("jump <branch>").description("Switch between branches")
+program.command("publish <path>").description("host your websites through statik")
 program.command("switch <CID>").description("Switch between commits,switch <head> to jump to head commit'")
-program.command("hardreset <CID>").description("hard reset ")
-program.command("reset <CID>").description("soft  reset ")
+program.command("hardreset <CID>").description("resets the head to the commit with commit Id CID and focefully changing the content ")
+program.command("softreset <CID>").description("resets the head to the commit with commit Id CID and have the changes in staging area")
 
 program.parse(process.argv);
 

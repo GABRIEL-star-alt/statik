@@ -25,6 +25,7 @@ program.command("publish <path>").description("host your websites through statik
 program.command("switch <CID>").description("Switch between commits,switch <head> to jump to head commit'")
 program.command("hardreset <CID>").description("resets the head to the commit with commit Id CID and focefully changing the content ")
 program.command("softreset <CID>").description("resets the head to the commit with commit Id CID and have the changes in staging area")
+program.command("restore").description("restore the staged changes")
 
 program.parse(process.argv);
 
